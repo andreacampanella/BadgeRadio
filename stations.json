@@ -1,0 +1,15 @@
+[
+  {"name": "Rainwave All",      "url": "http://allstream.rainwave.cc:8000/all.mp3"},
+  {"name": "Rainwave Game",     "url": "http://allstream.rainwave.cc:8000/game.mp3"},
+  {"name": "Rainwave OCRemix",  "url": "http://allstream.rainwave.cc:8000/ocremix.mp3"},
+  {"name": "Rainwave Covers",   "url": "http://allstream.rainwave.cc:8000/covers.mp3"},
+  {"name": "Rainwave Chiptune", "url": "http://allstream.rainwave.cc:8000/chiptune.mp3"},
+
+  {"name": "SomaFM Groove",     "url": "http://ice1.somafm.com/groovesalad-128-mp3"},
+  {"name": "SomaFM Drone",      "url": "http://ice1.somafm.com/dronezone-128-mp3"},
+  {"name": "SomaFM DefCon",     "url": "http://ice1.somafm.com/defcon-128-mp3"},
+  {"name": "SomaFM Lush",       "url": "http://ice1.somafm.com/lush-128-mp3"},
+  {"name": "SomaFM Indie",      "url": "http://ice1.somafm.com/indiepop-128-mp3"},
+
+  {"name": "Classic FM",        "url": "http://media-ice.musicradio.com/ClassicFMMP3"},
+]
