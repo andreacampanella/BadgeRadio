@@ -1,12 +1,33 @@
-"""Internet streaming radio — Tildagon app (themed iPod-Classic vibe)."""
+"""Internet streaming radio — Tildagon app, player runs in its own _thread."""
 import asyncio
 import socket
 import network
 import json
+import time
+import gc
+import _thread
 import micropython
-import mp3
-from machine import I2S, Pin
 
+# Load the bundled minimp3 natmod (/apps/radio/mp3.mpy)
+import sys
+if '/apps/radio' not in sys.path:
+    sys.path.insert(0, '/apps/radio')
+import mp3 as _mp3_natmod
+
+class _Mp3Adapter:
+    def init(self):
+        _mp3_natmod.op = 0
+        return _mp3_natmod.process() == 1
+    def decode(self, buf):
+        _mp3_natmod.op = 1
+        _mp3_natmod.input = buf
+        return _mp3_natmod.process()
+    def deinit(self):
+        pass
+
+mp3 = _Mp3Adapter()
+
+from machine import I2S, Pin
 import app
 from events.input import Buttons, BUTTON_TYPES
 
@@ -18,8 +39,11 @@ PIN_DIN = 37
 STATIONS_FILE = '/apps/radio/stations.json'
 SETTINGS_FILE = '/apps/radio/settings.json'
 
-# Theme combo: hold UP+DOWN simultaneously for this many ms
 THEME_COMBO_MS = 2000
+
+# Give the player thread plenty of stack — minimp3 decode frames + natmod call
+# frames need more than the ESP32 default of 4 KB.
+PLAYER_THREAD_STACK = 16 * 1024
 
 DEFAULT_STATIONS = [
     {"name": "Rainwave All",     "url": "http://allstream.rainwave.cc:8000/all.mp3"},
@@ -74,7 +98,6 @@ def save_settings(d):
         pass
 
 
-# --- Volume scaler (viper, fast) ---------------------------------------------
 @micropython.viper
 def _apply_volume(buf: ptr8, n_bytes: int, vol_num: int):
     p = ptr16(buf)
@@ -93,7 +116,6 @@ def _apply_volume(buf: ptr8, n_bytes: int, vol_num: int):
         i += 1
 
 
-# --- Themes ------------------------------------------------------------------
 THEMES = [
     {
         'name':     'iPod LCD',
@@ -127,14 +149,14 @@ THEMES = [
     },
     {
         'name':     'B&W Inverted',
-        'BG':       (0.00, 0.00, 0.00),  # black
-        'BAR_BG':   (0.15, 0.15, 0.15),  # near-black title bar
-        'LINE':     (1.00, 1.00, 1.00),  # white border lines
-        'INK':      (1.00, 1.00, 1.00),  # white text
-        'DIM_INK':  (0.55, 0.55, 0.55),  # grey secondary
-        'HILITE':   (1.00, 1.00, 1.00),  # white highlight bar
-        'HILITE_T': (0.00, 0.00, 0.00),  # black text on highlight
-    },    
+        'BG':       (0.00, 0.00, 0.00),
+        'BAR_BG':   (0.15, 0.15, 0.15),
+        'LINE':     (1.00, 1.00, 1.00),
+        'INK':      (1.00, 1.00, 1.00),
+        'DIM_INK':  (0.55, 0.55, 0.55),
+        'HILITE':   (1.00, 1.00, 1.00),
+        'HILITE_T': (0.00, 0.00, 0.00),
+    },
 ]
 
 
@@ -162,8 +184,10 @@ class BadgeRadio(app.App):
         self.rate = 0
         self.chans = 0
         self.error = ''
-        self._stop = False
-        self._task = None
+        # Thread control flags
+        self._thread_running = False
+        self._thread_stop = False
+        # UI button-edge tracking
         self._prev = {'CONFIRM': False, 'CANCEL': False, 'UP': False,
                       'DOWN': False, 'LEFT': False, 'RIGHT': False}
         self._draw_acc = 0
@@ -184,8 +208,16 @@ class BadgeRadio(app.App):
     def _change_station(self, delta_idx):
         self.station_idx = (self.station_idx + delta_idx) % len(self.stations)
         self._save()
-        if self._task and not self._task.done():
-            asyncio.create_task(self._restart())
+        if self._thread_running:
+            # Signal thread to stop and restart with new station
+            self._thread_stop = True
+            # Start a thread that waits then starts a new one
+            asyncio.create_task(self._restart_after_stop())
+
+    async def _restart_after_stop(self):
+        while self._thread_running:
+            await asyncio.sleep_ms(50)
+        self._start_player()
 
     def _cycle_theme(self):
         self.theme_idx = (self.theme_idx + 1) % len(THEMES)
@@ -196,120 +228,135 @@ class BadgeRadio(app.App):
     def theme(self):
         return THEMES[self.theme_idx]
 
-    # --- async streaming ---------------------------------------------
-    async def _stream_once(self):
-        name, url = self.stations[self.station_idx]
-        host, port, path = parse_url(url)
-        ai = socket.getaddrinfo(host, port)[0][-1]
-        s = socket.socket()
-        s.connect(ai)
-        req = ('GET {} HTTP/1.0\r\nHost: {}\r\nUser-Agent: tildagon/radio\r\n'
-               'Icy-MetaData: 0\r\n\r\n').format(path, host).encode()
-        s.send(req)
-        buf = b''
-        while b'\r\n\r\n' not in buf:
-            chunk = s.recv(256)
-            if not chunk:
-                s.close()
-                raise OSError("server closed before headers")
-            buf += chunk
-            if len(buf) > 4096:
-                s.close()
-                raise OSError("headers too big")
-        head, buf = buf.split(b'\r\n\r\n', 1)
-        first = head.split(b'\r\n', 1)[0]
-        if b'200' not in first:
-            s.close()
-            raise OSError("bad response: " + first.decode('ascii', 'replace'))
-        while len(buf) < 4096:
-            chunk = s.recv(2048)
-            if not chunk:
-                s.close()
-                raise OSError("no data")
-            buf += chunk
-        return s, buf
-
-    async def _player(self):
+    # ----------------------------------------------------------------
+    # Player runs in its own preemptive _thread, isolated from asyncio.
+    # ----------------------------------------------------------------
+    def _player_thread(self):
+        print('THREAD: start')
+        self._thread_running = True
         audio = None
         cur_rate = cur_ch = 0
-        while not self._stop:
-            try:
-                self.status = 'connecting'
-                sock, buf = await self._stream_once()
-                self.status = 'playing'
-                self.frames = 0
-                while not self._stop:
-                    if len(buf) < 2048:
+        try:
+            while not self._thread_stop:
+                try:
+                    self.status = 'connecting'
+                    name, url = self.stations[self.station_idx]
+                    host, port, path = parse_url(url)
+                    print('THREAD: connecting to', host, port, path)
+                    ai = socket.getaddrinfo(host, port)[0][-1]
+                    sock = socket.socket()
+                    sock.connect(ai)
+                    req = ('GET {} HTTP/1.0\r\nHost: {}\r\n'
+                           'User-Agent: tildagon/radio\r\nIcy-MetaData: 0\r\n\r\n'
+                           ).format(path, host).encode()
+                    sock.send(req)
+                    buf = b''
+                    while b'\r\n\r\n' not in buf:
+                        chunk = sock.recv(256)
+                        if not chunk:
+                            raise OSError("server closed before headers")
+                        buf += chunk
+                    _, buf = buf.split(b'\r\n\r\n', 1)
+                    while len(buf) < 4096:
                         chunk = sock.recv(2048)
                         if not chunk:
-                            break
+                            raise OSError("no data")
                         buf += chunk
-                    pcm, consumed, ch, hz, samp = mp3.decode(buf)
-                    buf = buf[consumed:]
-                    if not pcm:
-                        await asyncio.sleep_ms(0)
-                        continue
-                    if hz != cur_rate or ch != cur_ch:
-                        if audio is not None:
-                            audio.deinit()
-                        audio = I2S(
-                            I2S_ID,
-                            sck=Pin(PIN_BCK), ws=Pin(PIN_LCK), sd=Pin(PIN_DIN),
-                            mode=I2S.TX, bits=16,
-                            format=I2S.STEREO if ch == 2 else I2S.MONO,
-                            rate=hz, ibuf=80000,
-                        )
-                        cur_rate, cur_ch = hz, ch
-                        self.rate, self.chans = hz, ch
-                    pcm_buf = bytearray(pcm)
-                    vn = self._vol_num()
-                    if vn != 256:
-                        _apply_volume(pcm_buf, len(pcm_buf), vn)
-                    audio.write(pcm_buf)
-                    self.frames += 1
-                    await asyncio.sleep_ms(0)
+                    print('THREAD: stream open, buf=', len(buf))
+                    self.status = 'playing'
+                    self.frames = 0
+                    while not self._thread_stop:
+                        if len(buf) < 2048:
+                            chunk = sock.recv(2048)
+                            if not chunk:
+                                break
+                            buf += chunk
+                        pcm, consumed, ch, hz, samp = mp3.decode(buf)
+                        buf = buf[consumed:]
+                        if not pcm:
+                            continue
+                        if hz != cur_rate or ch != cur_ch:
+                            if audio is not None:
+                                audio.deinit()
+                            audio = I2S(
+                                I2S_ID,
+                                sck=Pin(PIN_BCK), ws=Pin(PIN_LCK), sd=Pin(PIN_DIN),
+                                mode=I2S.TX, bits=16,
+                                format=I2S.STEREO if ch == 2 else I2S.MONO,
+                                rate=hz, ibuf=80000,
+                            )
+                            cur_rate, cur_ch = hz, ch
+                            self.rate, self.chans = hz, ch
+                            print('THREAD: I2S', hz, ch)
+                        vn = self._vol_num()
+                        if vn != 256:
+                            pcm_buf = bytearray(pcm)
+                            _apply_volume(pcm_buf, len(pcm_buf), vn)
+                            audio.write(pcm_buf)
+                        else:
+                            audio.write(pcm)
+                        self.frames += 1
+                        if self.frames in (1, 5, 50, 500):
+                            print('THREAD: frames=', self.frames)
+                    try:
+                        sock.close()
+                    except Exception:
+                        pass
+                    if self._thread_stop:
+                        break
+                    self.status = 'reconnecting'
+                    time.sleep_ms(500)
+                except Exception as e:
+                    print('THREAD: exception:', repr(e))
+                    self.error = repr(e)
+                    self.status = 'error'
+                    time.sleep_ms(2000)
+        finally:
+            if audio is not None:
                 try:
-                    sock.close()
+                    audio.deinit()
                 except Exception:
                     pass
-                if self._stop:
-                    break
-                self.status = 'reconnecting'
-                await asyncio.sleep_ms(500)
-            except Exception as e:
-                self.error = repr(e)
-                self.status = 'error'
-                await asyncio.sleep_ms(2000)
-        if audio is not None:
-            audio.deinit()
-        self.status = 'stopped'
+            self.status = 'stopped'
+            self._thread_running = False
+            print('THREAD: exit')
 
     def _start_player(self):
-        if self._task is not None and not self._task.done():
+        if self._thread_running:
             return
-        self._stop = False
-        self._task = asyncio.create_task(self._player())
+        w = network.WLAN(network.STA_IF)
+        if not w.isconnected():
+            self.error = 'WiFi not connected'
+            self.status = 'error'
+            return
+        try:
+            mp3.init()
+        except Exception as e:
+            self.error = repr(e)
+            self.status = 'error'
+            return
+        self._thread_stop = False
+        try:
+            _thread.stack_size(PLAYER_THREAD_STACK)
+        except Exception:
+            pass
+        _thread.start_new_thread(self._player_thread, ())
 
-    async def _stop_player(self):
-        self._stop = True
-        if self._task is not None:
-            try:
-                await self._task
-            except Exception:
-                pass
-            self._task = None
-
-    async def _restart(self):
-        await self._stop_player()
-        self._start_player()
+    def _stop_player(self):
+        self._thread_stop = True
+        # Don't block; thread will clean up itself.
 
     async def _shutdown_and_minimise(self):
-        await self._stop_player()
+        self._stop_player()
+        # Give the thread a moment to exit cleanly before minimising
+        for _ in range(20):
+            if not self._thread_running:
+                break
+            await asyncio.sleep_ms(50)
         self.minimise()
 
-    # --- App lifecycle ----------------------------------------------
+    # --- App lifecycle (asyncio side) -------------------------------
     def update(self, delta):
-        # Snapshot current button states
         bs = self.button_states
         up_now      = bs.get(BUTTON_TYPES['UP'])
         down_now    = bs.get(BUTTON_TYPES['DOWN'])
@@ -318,16 +365,12 @@ class BadgeRadio(app.App):
         confirm_now = bs.get(BUTTON_TYPES['CONFIRM'])
         cancel_now  = bs.get(BUTTON_TYPES['CANCEL'])
 
-        # ----- CANCEL: tap to exit (edge) ---------------------------
         if cancel_now and not self._prev['CANCEL']:
             self._prev['CANCEL'] = cancel_now
             asyncio.create_task(self._shutdown_and_minimise())
             return True
         self._prev['CANCEL'] = cancel_now
 
-        # ----- UP+DOWN held together: theme combo -------------------
-        # While both held, accumulate timer, suppress single-action.
-        # Theme cycles when timer crosses threshold.
         if up_now and down_now:
             self._combo_ms += delta
             if (not self._combo_consumed) and self._combo_ms >= THEME_COMBO_MS:
@@ -337,12 +380,10 @@ class BadgeRadio(app.App):
             self._prev['DOWN'] = down_now
             return True
 
-        # Reset combo state when either button released
         if not (up_now and down_now):
             self._combo_ms = 0
             self._combo_consumed = False
 
-        # ----- UP / DOWN single press (only when other not held) ----
         if up_now and not self._prev['UP'] and not down_now:
             self._prev['UP'] = up_now
             self._change_station(-1)
@@ -354,7 +395,6 @@ class BadgeRadio(app.App):
         self._prev['UP'] = up_now
         self._prev['DOWN'] = down_now
 
-        # ----- LEFT / RIGHT volume ----------------------------------
         if left_now and not self._prev['LEFT']:
             self._prev['LEFT'] = left_now
             self.volume = max(0, self.volume - 5); self._save()
@@ -366,31 +406,18 @@ class BadgeRadio(app.App):
             return True
         self._prev['RIGHT'] = right_now
 
-        # ----- CONFIRM play/pause -----------------------------------
         if confirm_now and not self._prev['CONFIRM']:
             self._prev['CONFIRM'] = confirm_now
-            if self._task is None or self._task.done():
-                w = network.WLAN(network.STA_IF)
-                if not w.isconnected():
-                    self.error = 'WiFi not connected'
-                    self.status = 'error'
-                else:
-                    try:
-                        mp3.init()
-                    except Exception as e:
-                        self.error = repr(e); self.status = 'error'
-                        return True
-                    self._start_player()
+            if not self._thread_running:
+                self._start_player()
             else:
-                asyncio.create_task(self._stop_player())
+                self._stop_player()
             return True
         self._prev['CONFIRM'] = confirm_now
 
-        # Theme toast countdown
         if self._theme_toast_ms > 0:
             self._theme_toast_ms = max(0, self._theme_toast_ms - delta)
 
-        # Steady 4 Hz periodic redraw
         self._draw_acc += delta
         if self._draw_acc >= 250:
             self._draw_acc = 0
@@ -409,43 +436,29 @@ class BadgeRadio(app.App):
     def draw(self, ctx):
         t = self.theme
         ctx.save()
-
         ctx.rgb(*t['BG']).rectangle(-120, -120, 240, 240).fill()
-
-        # Title bar
         ctx.rgb(*t['BAR_BG']).rectangle(-120, -100, 240, 32).fill()
         ctx.rgb(*t['LINE']).rectangle(-120, -68, 240, 1).fill()
-
         ctx.text_baseline = ctx.MIDDLE
-
         ctx.text_align = ctx.LEFT
         ctx.font_size = 22
         glyph = '\u25B6' if self.status == 'playing' else '\u25A0'
         ctx.rgb(*t['INK']).move_to(-46, -84).text(glyph)
-
         ctx.text_align = ctx.CENTER
         ctx.font_size = 22
         ctx.rgb(*t['INK']).move_to(0, -84).text(TITLE_LABEL.get(self.status, 'Radio'))
-
-        # Station list
         n = len(self.stations)
         prev_name = self.stations[(self.station_idx - 1) % n][0]
         cur_name  = self.stations[self.station_idx][0]
         next_name = self.stations[(self.station_idx + 1) % n][0]
-
         ctx.text_align = ctx.CENTER
-
         self._fit_text(ctx, prev_name, max_w=220, base_size=22, min_size=14)
         ctx.rgb(*t['DIM_INK']).move_to(0, -38).text(prev_name)
-
         ctx.rgb(*t['HILITE']).rectangle(-120, -18, 240, 36).fill()
         self._fit_text(ctx, cur_name, max_w=220, base_size=26, min_size=14)
         ctx.rgb(*t['HILITE_T']).move_to(0, 0).text(cur_name)
-
         self._fit_text(ctx, next_name, max_w=220, base_size=22, min_size=14)
         ctx.rgb(*t['DIM_INK']).move_to(0, 30).text(next_name)
-
-        # Volume bar
         bar_x = -70; bar_y = 58; bar_w = 140; bar_h = 10
         ctx.rgb(*t['LINE']).rectangle(bar_x - 1, bar_y - 1, bar_w + 2, bar_h + 2).stroke()
         fill_w = (bar_w * self.volume) // 100
@@ -456,11 +469,8 @@ class BadgeRadio(app.App):
         ctx.text_align = ctx.RIGHT
         ctx.rgb(*t['INK']).move_to(100, 63).text("{}%".format(self.volume))
         ctx.text_align = ctx.CENTER
-
-        # Bottom row: combo progress > theme toast > error > format
         ctx.font_size = 14
         if self._combo_ms > 0 and not self._combo_consumed:
-            # Progress bar for theme combo
             pw = 100
             ctx.rgb(*t['LINE']).rectangle(-pw // 2 - 1, 79, pw + 2, 10).stroke()
             done = (pw * self._combo_ms) // THEME_COMBO_MS
@@ -475,11 +485,8 @@ class BadgeRadio(app.App):
         elif self.rate:
             ctx.rgb(*t['DIM_INK']).move_to(0, 88).text(
                 "{} Hz · {} ch".format(self.rate, self.chans))
-
-        # Hint
         if not (self._combo_ms > 0 and not self._combo_consumed):
             ctx.font_size = 11
             ctx.rgb(*t['DIM_INK']).move_to(0, 105).text("▲▼ stn  ◀▶ vol")
-
         ctx.restore()
         self.draw_overlays(ctx)
