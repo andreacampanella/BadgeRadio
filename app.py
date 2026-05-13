@@ -14,7 +14,8 @@ import struct
 import _thread
 import micropython
 
-DEBUG = True
+
+DEBUG = False
 
 # Frames between gc.collect() calls. ~64 frames ≈ 1.7 s of audio at 44.1 kHz.
 # gc.collect on ESP32 is ~10-30 ms; I2S DMA buffers ~1 s of audio, so the
@@ -39,8 +40,8 @@ def dbg(tag, *args):
 
 # --- Load the bundled minimp3 natmod ---------------------------------------
 import sys
-if '/apps/radio' not in sys.path:
-    sys.path.insert(0, '/apps/radio')
+if '/apps/andreacampanella_BadgeRadio' not in sys.path:
+    sys.path.insert(0, '/apps/andreacampanella_BadgeRadio')
 import mp3 as _mp3_natmod
 
 # 1152 samples/frame * 2 channels * 2 bytes/sample = 4608 max
@@ -93,21 +94,20 @@ I2S_ID  = 0
 DEFAULT_PORT = 2
 VALID_PORTS = (1, 2, 3, 4, 5, 6)
 
-STATIONS_FILE = '/apps/radio/stations.json'
-SETTINGS_FILE = '/apps/radio/settings.json'
+STATIONS_FILE = '/apps/andreacampanella_BadgeRadio/stations.json'
+SETTINGS_FILE = '/apps/andreacampanella_BadgeRadio/settings.json'
 
 SETTINGS_COMBO_MS = 1500
 
-
 ABOUT_LINES = [
-    "TildaRadio",
-    "v0.1",
+    "BadgeRadio",
+    "v3.0.0",
     "",
-    "Internet radio for",
-    "your Tildagon badge.",
-    "",
-    "by your-name-here",
-    "https://github.com/...",
+    "You will need a suitable",
+    "pcm5012 expansion to use this",
+    "HMU on social @emuboy",
+    "or check github for info",
+    "github/andreacampanella/BadgeRadio",
 ]
 
 
@@ -813,3 +813,5 @@ class BadgeRadio(app.App):
         ctx.font_size = 10
         ctx.rgb(*t['DIM_INK']).move_to(0, 108).text(
             "press any button" if self._from_splash else "✗ back")
+        
+__app_export__ = BadgeRadio
