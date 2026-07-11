@@ -5,6 +5,13 @@ inspired UI with themes, live volume control, swappable station list.
 
 ![controls: ▲▼ stations · ◀▶ volume · A play/stop · B exit · ▲▼ hold 2s themes]
 
+### AudioHexpansion
+
+You will need my I2S hardware hexpansion!
+
+You can find the hardware design files
+and assembly instructions [here](https://github.com/andreacampanella/AudioHexpasion) 
+
 ## What it does
 
 - Streams plain HTTP MP3 (Icecast / Shoutcast) over WiFi.
