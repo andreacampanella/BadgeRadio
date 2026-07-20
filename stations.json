@@ -1,15 +1,486 @@
 [
-  {"name": "Rainwave All",      "url": "http://allstream.rainwave.cc:8000/all.mp3"},
-  {"name": "Rainwave Game",     "url": "http://allstream.rainwave.cc:8000/game.mp3"},
-  {"name": "Rainwave OCRemix",  "url": "http://allstream.rainwave.cc:8000/ocremix.mp3"},
-  {"name": "Rainwave Covers",   "url": "http://allstream.rainwave.cc:8000/covers.mp3"},
-  {"name": "Rainwave Chiptune", "url": "http://allstream.rainwave.cc:8000/chiptune.mp3"},
-
-  {"name": "SomaFM Groove",     "url": "http://ice1.somafm.com/groovesalad-128-mp3"},
-  {"name": "SomaFM Drone",      "url": "http://ice1.somafm.com/dronezone-128-mp3"},
-  {"name": "SomaFM DefCon",     "url": "http://ice1.somafm.com/defcon-128-mp3"},
-  {"name": "SomaFM Lush",       "url": "http://ice1.somafm.com/lush-128-mp3"},
-  {"name": "SomaFM Indie",      "url": "http://ice1.somafm.com/indiepop-128-mp3"},
-
-  {"name": "Classic FM",        "url": "http://media-ice.musicradio.com/ClassicFMMP3"},
+  {
+    "name": "══ GAME ══",
+    "url": ""
+  },
+  {
+    "name": "Rainwave All",
+    "url": "http://allstream.rainwave.cc:8000/all.mp3"
+  },
+  {
+    "name": "Rainwave Game",
+    "url": "http://allstream.rainwave.cc:8000/game.mp3"
+  },
+  {
+    "name": "Rainwave OCRemix",
+    "url": "http://allstream.rainwave.cc:8000/ocremix.mp3"
+  },
+  {
+    "name": "Rainwave Chiptune",
+    "url": "http://allstream.rainwave.cc:8000/chiptune.mp3"
+  },
+  {
+    "name": "Rainwave Covers",
+    "url": "http://allstream.rainwave.cc:8000/covers.mp3"
+  },
+  {
+    "name": "══ AMBIENT ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Drone Zone",
+    "url": "http://ice1.somafm.com/dronezone-128-mp3"
+  },
+  {
+    "name": "SomaFM Space Station",
+    "url": "http://ice1.somafm.com/spacestation-128-mp3"
+  },
+  {
+    "name": "SomaFM Deep Space One",
+    "url": "http://ice1.somafm.com/deepspaceone-128-mp3"
+  },
+  {
+    "name": "SomaFM Synphaera",
+    "url": "http://ice1.somafm.com/synphaera-128-mp3"
+  },
+  {
+    "name": "══ DOWNTEMPO ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Groove Salad",
+    "url": "http://ice1.somafm.com/groovesalad-128-mp3"
+  },
+  {
+    "name": "SomaFM Beat Blender",
+    "url": "http://ice1.somafm.com/beatblender-128-mp3"
+  },
+  {
+    "name": "SomaFM Fluid",
+    "url": "http://ice1.somafm.com/fluid-128-mp3"
+  },
+  {
+    "name": "SomaFM The Trip",
+    "url": "http://ice1.somafm.com/thetrip-128-mp3"
+  },
+  {
+    "name": "SomaFM Cliqhop",
+    "url": "http://ice1.somafm.com/cliqhop-128-mp3"
+  },
+  {
+    "name": "══ HACKING ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM DEF CON",
+    "url": "http://ice1.somafm.com/defcon-128-mp3"
+  },
+  {
+    "name": "══ LOUNGE ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Secret Agent",
+    "url": "http://ice1.somafm.com/secretagent-128-mp3"
+  },
+  {
+    "name": "SomaFM Illinois Street",
+    "url": "http://ice1.somafm.com/illstreet-128-mp3"
+  },
+  {
+    "name": "SomaFM Vaporwaves",
+    "url": "http://ice1.somafm.com/vaporwaves-128-mp3"
+  },
+  {
+    "name": "══ RETRO ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Left Coast 70s",
+    "url": "http://ice1.somafm.com/seventies-128-mp3"
+  },
+  {
+    "name": "SomaFM Underground 80s",
+    "url": "http://ice1.somafm.com/u80s-128-mp3"
+  },
+  {
+    "name": "══ INDIE / ROCK ══",
+    "url": ""
+  },
+  {
+    "name": "KEXP Seattle",
+    "url": "http://live-mp3-128.kexp.org/kexp128.mp3"
+  },
+  {
+    "name": "SomaFM Indie Pop",
+    "url": "http://ice1.somafm.com/indiepop-128-mp3"
+  },
+  {
+    "name": "══ METAL ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Metal Detector",
+    "url": "http://ice1.somafm.com/metal-128-mp3"
+  },
+  {
+    "name": "══ FOLK ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Boot Liquor",
+    "url": "http://ice1.somafm.com/bootliquor-128-mp3"
+  },
+  {
+    "name": "SomaFM Folk Forward",
+    "url": "http://ice1.somafm.com/folkfwd-128-mp3"
+  },
+  {
+    "name": "══ WORLD ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Thistle Radio",
+    "url": "http://ice1.somafm.com/thistle-128-mp3"
+  },
+  {
+    "name": "SomaFM Suburbs of Goa",
+    "url": "http://ice1.somafm.com/suburbsofgoa-128-mp3"
+  },
+  {
+    "name": "══ JAZZ ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Sonic Universe",
+    "url": "http://ice1.somafm.com/sonicuniverse-128-mp3"
+  },
+  {
+    "name": "══ CLASSICAL ══",
+    "url": ""
+  },
+  {
+    "name": "Classic FM",
+    "url": "http://media-ice.musicradio.com/ClassicFMMP3"
+  },
+  {
+    "name": "══ ECLECTIC ══",
+    "url": ""
+  },
+  {
+    "name": "Radio Paradise Main",
+    "url": "http://stream.radioparadise.com/mp3-192"
+  },
+  {
+    "name": "Radio Paradise Mellow",
+    "url": "http://stream.radioparadise.com/mellow-192"
+  },
+  {
+    "name": "Radio Paradise Rock",
+    "url": "http://stream.radioparadise.com/rock-192"
+  },
+  {
+    "name": "══ MORE SomaFM ══",
+    "url": ""
+  },
+  {
+    "name": "SomaFM Groove Salad 2",
+    "url": "http://ice1.somafm.com/groovesalad2-128-mp3"
+  },
+  {
+    "name": "SomaFM GS Classic",
+    "url": "http://ice1.somafm.com/gsclassic-128-mp3"
+  },
+  {
+    "name": "SomaFM Drone Zone 2",
+    "url": "http://ice1.somafm.com/dz2-128-mp3"
+  },
+  {
+    "name": "SomaFM Dark Zone",
+    "url": "http://ice1.somafm.com/darkzone-128-mp3"
+  },
+  {
+    "name": "SomaFM Doomed",
+    "url": "http://ice1.somafm.com/doomed-128-mp3"
+  },
+  {
+    "name": "SomaFM Mission Control",
+    "url": "http://ice1.somafm.com/missioncontrol-128-mp3"
+  },
+  {
+    "name": "SomaFM n5MD",
+    "url": "http://ice1.somafm.com/n5md-128-mp3"
+  },
+  {
+    "name": "SomaFM Dub Step Beyond",
+    "url": "http://ice1.somafm.com/dubstep-128-mp3"
+  },
+  {
+    "name": "SomaFM Covers",
+    "url": "http://ice1.somafm.com/covers-128-mp3"
+  },
+  {
+    "name": "SomaFM Black Rock FM",
+    "url": "http://ice1.somafm.com/brfm-128-mp3"
+  },
+  {
+    "name": "SomaFM Tiki Time",
+    "url": "http://ice1.somafm.com/tikitime-128-mp3"
+  },
+  {
+    "name": "SomaFM In-Sound",
+    "url": "http://ice1.somafm.com/insound-128-mp3"
+  },
+  {
+    "name": "══ JAZZ / BLUES ══",
+    "url": ""
+  },
+  {
+    "name": "WWOZ New Orleans",
+    "url": "http://wwoz-sc.streamguys.com/wwoz-hi.mp3"
+  },
+  {
+    "name": "Adroit Jazz",
+    "url": "http://icecast.walmradio.com:8000/jazz"
+  },
+  {
+    "name": "══ VINYL / OLDIES ══",
+    "url": ""
+  },
+  {
+    "name": "Classic Vinyl HD",
+    "url": "http://icecast.walmradio.com:8000/classic"
+  },
+  {
+    "name": "Christmas Vinyl HD",
+    "url": "http://icecast.walmradio.com:8000/christmas"
+  },
+  {
+    "name": "══ DANCE / POP ══",
+    "url": ""
+  },
+  {
+    "name": "Dance Wave!",
+    "url": "http://dancewave.online/dance.mp3"
+  },
+  {
+    "name": "Mangoradio",
+    "url": "http://mangoradio.stream.laut.fm/mangoradio"
+  },
+  {
+    "name": "Fun Radio",
+    "url": "http://icecast.funradio.fr/fun-1-44-128"
+  },
+  {
+    "name": "══ COLLEGE / FREEFORM ══",
+    "url": ""
+  },
+  {
+    "name": "WXYC Chapel Hill",
+    "url": "http://audio-mp3.ibiblio.org:8000/wxyc.mp3"
+  },
+  {
+    "name": "WEVL Memphis",
+    "url": "http://wevl.streamguys1.com/live"
+  },
+  {
+    "name": "WERS Emerson Boston",
+    "url": "http://marconi.emerson.edu:8000/wers"
+  },
+  {
+    "name": "══ AMBIENT ══",
+    "url": ""
+  },
+  {
+    "name": "a.m. Ambient",
+    "url": "http://radio.stereoscenic.com/ama-h"
+  },
+  {
+    "name": "Ambient Sleeping Pill",
+    "url": "http://radio.stereoscenic.com/asp-h"
+  },
+  {
+    "name": "Dinamo.FM Sleep",
+    "url": "http://channels.dinamo.fm/sleep-mp3"
+  },
+  {
+    "name": "Nordic Lodge",
+    "url": "http://radio.streemlion.com:1160/stream"
+  },
+  {
+    "name": "══ CAMPUS ══",
+    "url": ""
+  },
+  {
+    "name": "BFF.fm (SF)",
+    "url": "http://stream.bff.fm/1/BFF.fm.mp3"
+  },
+  {
+    "name": "KZSU Stanford",
+    "url": "http://kzsu-streams.stanford.edu/kzsu-1-128.mp3"
+  },
+  {
+    "name": "══ CLASSICAL ══",
+    "url": ""
+  },
+  {
+    "name": "WQXR New York",
+    "url": "http://stream.wqxr.org/wqxr"
+  },
+  {
+    "name": "WQXR Q2 (new music)",
+    "url": "http://q2stream.wqxr.org/q2"
+  },
+  {
+    "name": "Linn Classical",
+    "url": "http://radio.linn.co.uk:8004/stream"
+  },
+  {
+    "name": "Concertzender Baroque",
+    "url": "http://streams.greenhost.nl:8080/barok"
+  },
+  {
+    "name": "Radio Suisse Classique",
+    "url": "http://stream.srg-ssr.ch/m/rsc_fr/mp3_128"
+  },
+  {
+    "name": "══ OLDIES ══",
+    "url": ""
+  },
+  {
+    "name": "Beatles Radio",
+    "url": "http://stream.zeno.fm/e4auhdgm6cquv"
+  },
+  {
+    "name": "Radio Caroline",
+    "url": "http://78.129.202.200:8040/"
+  },
+  {
+    "name": "Radio Dismuke (20s-30s)",
+    "url": "http://stream2.early1900s.org:8000/"
+  },
+  {
+    "name": "LuxuriaMusic",
+    "url": "http://ice10.securenetsystems.net/LUXOMP3"
+  },
+  {
+    "name": "══ ELECTRONIC ══",
+    "url": ""
+  },
+  {
+    "name": "After Hours FM (trance)",
+    "url": "http://fr.ah.fm:8000/"
+  },
+  {
+    "name": "Frisky Radio",
+    "url": "http://stream2.friskyradio.com/frisky_mp3_hi"
+  },
+  {
+    "name": "Intergalactic FM",
+    "url": "http://radio.intergalactic.fm:80/1"
+  },
+  {
+    "name": "Sub.FM (UK dubstep)",
+    "url": "http://subfm.radioca.st/Sub.FM"
+  },
+  {
+    "name": "Deepvibes Radio",
+    "url": "http://88.208.218.19:9106/stream"
+  },
+  {
+    "name": "══ FUNK / SOUL ══",
+    "url": ""
+  },
+  {
+    "name": "Dinamo.FM DiSCOTHEQUE",
+    "url": "http://channels.dinamo.fm/discotheque-mp3"
+  },
+  {
+    "name": "The Funky Channel",
+    "url": "http://cast3.my-control-panel.com:8170/stream"
+  },
+  {
+    "name": "══ JAZZ / BLUES ══",
+    "url": ""
+  },
+  {
+    "name": "The Jazz Groove",
+    "url": "http://east-mp3-128.streamthejazzgroove.com/stream"
+  },
+  {
+    "name": "KCSM Jazz 91.1",
+    "url": "http://ice7.securenetsystems.net/KCSM2"
+  },
+  {
+    "name": "TSF Jazz (Paris)",
+    "url": "http://tsfjazz.ice.infomaniak.ch/tsfjazz-high.mp3"
+  },
+  {
+    "name": "Jazz Radio Blue",
+    "url": "http://jazzblues.ice.infomaniak.ch/jazzblues-high.mp3"
+  },
+  {
+    "name": "Aardvark Blues FM",
+    "url": "http://edge4.peta.live365.net/b77280_128mp3"
+  },
+  {
+    "name": "══ METAL ══",
+    "url": ""
+  },
+  {
+    "name": "Core Radio",
+    "url": "http://serv.coreradio.online:8000/coreradio"
+  },
+  {
+    "name": "Hard Rock Hell Radio",
+    "url": "http://167.114.174.197:9254/stream"
+  },
+  {
+    "name": "══ REGGAE / DUB ══",
+    "url": ""
+  },
+  {
+    "name": "Alpha Boys School (JM)",
+    "url": "http://alphaboys-live.streamguys1.com/alphaboys.mp3"
+  },
+  {
+    "name": "UK Roots FM",
+    "url": "http://138.201.198.218:8043/"
+  },
+  {
+    "name": "══ ROCK / INDIE ══",
+    "url": ""
+  },
+  {
+    "name": "Delicious Agony (prog)",
+    "url": "http://deliciousagony.streamguys1.com/"
+  },
+  {
+    "name": "Grateful Dead Radio",
+    "url": "http://cassini.shoutca.st:8574/stream"
+  },
+  {
+    "name": "══ VIDEO GAME / DEMOSCENE ══",
+    "url": ""
+  },
+  {
+    "name": "Nectarine (demoscene)",
+    "url": "http://necta.burn.net:8000/nectarine"
+  },
+  {
+    "name": "RadioSEGA",
+    "url": "http://content.radiosega.net:8006/live"
+  },
+  {
+    "name": "SceneSat",
+    "url": "http://oscar.scenesat.com:8000/scenesatmax"
+  },
+  {
+    "name": "Slay Radio (C64)",
+    "url": "http://relay4.slayradio.org:8300/"
+  },
+  {
+    "name": "Streaming Soundtracks",
+    "url": "http://hi5.streamingsoundtracks.com/"
+  }
 ]
